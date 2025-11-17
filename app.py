@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import qrcode
 from io import BytesIO
 
-# --- DATI PIANTE (CARICATI DAL PDF) ---
+# --- DATI PIANTE ---
 DATA = [
     {"id": "tronchetto", "nome": "Tronchetto del Madagascar", "desc": "Fusto sottile. Resistente poca luce.", "rules": [9, 6, 12, 18]},
     {"id": "aloe", "nome": "Aloe Vera", "desc": "Succulenta. No acqua se umido.", "rules": [17, 14, 25, 35]},
@@ -64,9 +64,9 @@ if pid:
 # Generatore QR
 st.sidebar.header("🖨️ Stampa QR Code")
 if st.sidebar.checkbox("Mostra codici"):
-    # Questo link andrà aggiornato dopo!
-    url_base = "https://piante-ufficio.streamlit.app"
+    # IL TUO LINK CORRETTO:
+    url_base = "https://piante-ufficio-kchykjcgehambaqjlyfmvb.streamlit.app"
     for p in DATA:
         img = qrcode.make(f"{url_base}/?plant_id={p['id']}")
         buf = BytesIO(); img.save(buf); st.sidebar.image(buf.getvalue(), caption=p['nome'])
-  
+        
