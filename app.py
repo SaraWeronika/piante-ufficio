@@ -3,116 +3,105 @@ import pandas as pd
 from datetime import datetime, timedelta
 import qrcode
 from io import BytesIO
+from streamlit_lottie import st_lottie
+import requests
 
-# --- DATI PIANTE CON FOTO ---
+# --- CONFIGURAZIONE PAGINA ---
+st.set_page_config(page_title="Ufficio Green", page_icon="🌿", layout="centered")
+
+# --- FUNZIONI GRAFICHE E ANIMAZIONI ---
+def load_lottieurl(url):
+    r = requests.get(url)
+    if r.status_code != 200: return None
+    return r.json()
+
+# Animazione Annaffiatoio
+lottie_water = load_lottieurl("https://lottie.host/956d9c86-6e5f-4633-a261-2df633619a33/sI1Y7zYJp8.json")
+
+# CSS PER SFONDO E STILE
+page_bg_img = """
+<style>
+[data-testid="stAppViewContainer"] {
+background-image: url("https://images.unsplash.com/photo-1470058869958-2a77ade41c02?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80");
+background-size: cover;
+}
+[data-testid="stHeader"] {background-color: rgba(0,0,0,0);}
+.stMarkdown, .stText, h1, h2, h3 {
+    text-shadow: 2px 2px 4px #000000;
+    color: white !important;
+}
+div[data-testid="stExpander"] {
+    background-color: rgba(255, 255, 255, 0.85);
+    border-radius: 15px;
+    color: black !important;
+}
+div[data-testid="stExpander"] p, div[data-testid="stExpander"] h1 {
+    color: black !important;
+    text-shadow: none !important;
+}
+</style>
+"""
+st.markdown(page_bg_img, unsafe_allow_html=True)
+
+# --- DATABASE PIANTE (DAL TUO PDF) ---
 DATA = [
     {
-        "id": "tronchetto", 
-        "nome": "Tronchetto del Madagascar", 
-        "desc": "Fusto sottile. Resistente poca luce.", 
+        "id": "tronchetto", "nome": "Tronchetto del Madagascar",
+        "desc": "Pianta popolare con fusto sottile e legnoso. Foglie strette e arcuate. Resistente e tollerante alla scarsa luce.",
         "rules": [9, 6, 12, 18],
-        "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Dracaena_marginata_var._tricolor.jpg/320px-Dracaena_marginata_var._tricolor.jpg"
+        "img": "https://images.unsplash.com/photo-1612362940127-23739773c642?w=500"
     },
     {
-        "id": "aloe", 
-        "nome": "Aloe Vera", 
-        "desc": "Succulenta. No acqua se umido.", 
+        "id": "aloe", "nome": "Aloe Vera",
+        "desc": "Succulenta nota per il gel lenitivo. Ideale per scottature. Non innaffiare MAI se il terriccio è umido.",
         "rules": [17, 14, 25, 35],
-        "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Aloe_vera_flower_inset.png/320px-Aloe_vera_flower_inset.png"
+        "img": "https://images.unsplash.com/photo-1602613823593-879418892928?w=500"
     },
     {
-        "id": "giglio", 
-        "nome": "Giglio della Pace", 
-        "desc": "Foglie lucide, fiori bianchi.", 
+        "id": "giglio", "nome": "Giglio della Pace",
+        "desc": "Apprezzata per foglie lucide e fiori bianchi a vela. Purifica l'aria. Facile da coltivare.",
         "rules": [7, 6, 12, 12],
-        "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Spathiphyllum_cochlearispathum_RTBG.jpg/320px-Spathiphyllum_cochlearispathum_RTBG.jpg"
+        "img": "https://images.unsplash.com/photo-1593691973565-863d65dfb597?w=500"
     },
     {
-        "id": "fusaggine", 
-        "nome": "Fusaggine Giapponese", 
-        "desc": "Arbusto resistente. Inverno: MAI.", 
+        "id": "fusaggine", "nome": "Fusaggine Giapponese",
+        "desc": "Arbusto sempreverde compatto. INVERNO: MAI acqua (solo se secchissimo). Trae acqua dalle piogge.",
         "rules": [9, 4, 12, 999],
         "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Euonymus_japonicus_0.jpg/320px-Euonymus_japonicus_0.jpg"
     },
     {
-        "id": "kalanchoe", 
-        "nome": "Kalanchoe Variegata", 
-        "desc": "Foglie carnose. Teme ristagni.", 
+        "id": "kalanchoe", "nome": "Kalanchoe Variegata",
+        "desc": "Succulenta a foglie carnose. Teme i ristagni. Innaffiare dal basso.",
         "rules": [17, 14, 25, 35],
         "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Kalanchoe_blossfeldiana_4.jpg/320px-Kalanchoe_blossfeldiana_4.jpg"
     },
     {
-        "id": "fatsia", 
-        "nome": "Fatsia Japanica", 
-        "desc": "Grandi foglie lobate.", 
+        "id": "fatsia", "nome": "Fatsia Japanica",
+        "desc": "Grandi foglie lobate che ricordano mani aperte. Cresce rapidamente. Innaffiare abbondantemente.",
         "rules": [6, 4, 9, 12],
         "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Fatsia_japonica_002.JPG/320px-Fatsia_japonica_002.JPG"
     },
     {
-        "id": "palma", 
-        "nome": "Palma della Fortuna", 
-        "desc": "Foglie a ventaglio.", 
+        "id": "palma", "nome": "Palma della Fortuna",
+        "desc": "Fogliame a ventaglio, tocco esotico. Evitare ristagni per prevenire marciume.",
         "rules": [9, 6, 12, 17],
-        "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Trachycarpus_fortunei_at_Kew_Gardens.jpg/320px-Trachycarpus_fortunei_at_Kew_Gardens.jpg"
+        "img": "https://images.unsplash.com/photo-1598632721662-0413b6170367?w=500"
     },
     {
-        "id": "pothos", 
-        "nome": "Pothos", 
-        "desc": "Liane, foglie a cuore.", 
+        "id": "pothos", "nome": "Pothos",
+        "desc": "Liane lunghe e foglie a cuore. Resistente e purifica l'aria. Ottima per principianti.",
         "rules": [9, 6, 12, 17],
-        "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Epipremnum_aureum_31082013.jpg/320px-Epipremnum_aureum_31082013.jpg"
+        "img": "https://images.unsplash.com/photo-1596727563993-2303f977f283?w=500"
     },
-    {
-        "id": "zamioculca", 
-        "nome": "Zamioculca", 
-        "desc": "Foglie cerose. Poca acqua.", 
+     {
+        "id": "zamioculca", "nome": "Zamioculca",
+        "desc": "Foglie cerose verde scuro. Richiede pochissima acqua grazie ai rizomi.",
         "rules": [17, 14, 25, 35],
-        "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Zamioculcas_zamiifolia_%28ZZ_plant%29.jpg/320px-Zamioculcas_zamiifolia_%28ZZ_plant%29.jpg"
-    },
-    {
-        "id": "plectranthus", 
-        "nome": "Plectranthus", 
-        "desc": "Portamento ricadente.", 
-        "rules": [6, 4, 9, 12],
-        "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Plectranthus_verticillatus.jpg/320px-Plectranthus_verticillatus.jpg"
-    },
-    {
-        "id": "dracaena", 
-        "nome": "Dracaena Fragrans", 
-        "desc": "Tronchetto della felicità.", 
-        "rules": [12, 9, 17, 25],
-        "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Starr_080117-1537_Dracaena_fragrans.jpg/320px-Starr_080117-1537_Dracaena_fragrans.jpg"
-    },
-    {
-        "id": "cordyline", 
-        "nome": "Cordyline Fruticosa", 
-        "desc": "Foglie colorate (rosso/rosa).", 
-        "rules": [12, 9, 17, 25],
-        "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Cordyline_fruticosa_11.jpg/320px-Cordyline_fruticosa_11.jpg"
-    },
-    {
-        "id": "pachira", 
-        "nome": "Pachira Acquatica", 
-        "desc": "Albero dei soldi. Tronco intrecciato.", 
-        "rules": [9, 9, 17, 17],
-        "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Pachira_aquatica_02.jpg/320px-Pachira_aquatica_02.jpg"
-    },
-    {
-        "id": "alocasia", 
-        "nome": "Alocasia (Orecchie Elefante)", 
-        "desc": "Foglie enormi a cuore.", 
-        "rules": [6, 5, 9, 11],
-        "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Alocasia_macrorrhizos_3.jpg/320px-Alocasia_macrorrhizos_3.jpg"
-    },
-    {
-        "id": "dyckia", 
-        "nome": "Dyckia", 
-        "desc": "Succulenta spinosa. Teme eccesso acqua.", 
-        "rules": [21, 21, 35, 35],
-        "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Dyckia_encholirioides_kz01.jpg/320px-Dyckia_encholirioides_kz01.jpg"
+        "img": "https://images.unsplash.com/photo-1600417148500-662e39a0c34c?w=500"
     }
 ]
 
+# Gestione Stagione
 def get_season_idx():
     m = datetime.now().month
     if 3 <= m <= 5: return 0 # Primavera
@@ -120,45 +109,86 @@ def get_season_idx():
     if 9 <= m <= 11: return 2 # Autunno
     return 3 # Inverno
 
-st.set_page_config(page_title="Green Office", page_icon="🌿")
 season_names = ["Primavera", "Estate", "Autunno", "Inverno"]
 s_idx = get_season_idx()
 
+# Memoria (Nota: Si resetta al riavvio se non usiamo Google Sheets!)
 if 'log' not in st.session_state: st.session_state.log = {}
 
-st.title(f"🌿 Gestione Piante - {season_names[s_idx]}")
+# --- INTERFACCIA ---
 
-# Logica QR
+# 1. Se c'è un QR Code (plant_id nell'URL)
 pid = st.query_params.get("plant_id")
+
 if pid:
+    # VISTA PIANTA SINGOLA
     p = next((x for x in DATA if x["id"] == pid), None)
     if p:
-        st.header(p['nome'])
-        st.image(p['img'], width=300) # <-- ORA C'È LA FOTO!
-        st.info(p['desc'])
-        days = p['rules'][s_idx]
+        st.title(p['nome'])
+        st.image(p['img'], use_container_width=True)
         
-        last = st.session_state.log.get(pid, datetime.now().strftime("%Y-%m-%d"))
-        if days == 999:
-            nxt = "Manuale (Controllare terreno)"
-        else:
-            nxt = (datetime.strptime(last, "%Y-%m-%d") + timedelta(days=days)).strftime("%Y-%m-%d")
-        
-        st.metric("Ultima Acqua", last)
-        st.metric("Prossima", nxt)
-        
-        if st.button("💦 HO INNAFFIATO ORA"):
-            st.session_state.log[pid] = datetime.now().strftime("%Y-%m-%d")
-            st.success("Registrato!")
-            st.rerun()
+        # Card bianca per i dettagli
+        with st.container():
+            st.markdown(f"### 📖 {p['desc']}")
+            st.markdown("---")
+            
+            days = p['rules'][s_idx]
+            last = st.session_state.log.get(pid, datetime.now().strftime("%Y-%m-%d"))
+            
+            if days == 999:
+                nxt_date_str = "MANUALE"
+                msg_col = "off"
+            else:
+                nxt_date = datetime.strptime(last, "%Y-%m-%d") + timedelta(days=days)
+                nxt_date_str = nxt_date.strftime("%d %b %Y")
+                days_left = (nxt_date.date() - datetime.now().date()).days
+                
+                if days_left < 0: msg_col = "red" # Ritardo
+                elif days_left == 0: msg_col = "orange" # Oggi
+                else: msg_col = "green" # Tutto ok
 
-# Generatore QR
+            col1, col2 = st.columns(2)
+            col1.metric("📅 Ultima Acqua", last)
+            col2.metric("💧 Prossima Acqua", nxt_date_str)
+            
+            st.write("") # Spazio
+            
+            # Animazione Annaffiatoio sopra il bottone
+            st_lottie(lottie_water, height=150, key="water_anim")
+            
+            if st.button("💦 HO INNAFFIATO ORA", type="primary", use_container_width=True):
+                st.session_state.log[pid] = datetime.now().strftime("%Y-%m-%d")
+                st.balloons() # Festeggiamenti visuali!
+                st.success("✅ Ottimo lavoro! Pianta registrata.")
+                st.rerun()
+            
+            if st.button("🔙 Torna alla Dashboard"):
+                st.query_params.clear()
+                st.rerun()
+
+else:
+    # 2. VISTA DASHBOARD (Tutte le piante) - Per controllo da remoto
+    st.title(f"🌿 Dashboard Ufficio ({season_names[s_idx]})")
+    st.markdown("**Clicca su una pianta per vedere i dettagli e aggiornarla.**")
+    
+    # Griglia di piante
+    for p in DATA:
+        with st.expander(f"🌱 {p['nome']}"):
+            c1, c2 = st.columns([1,2])
+            with c1:
+                st.image(p['img'], width=100)
+            with c2:
+                last = st.session_state.log.get(p['id'], "Mai registrata")
+                st.write(f"**Ultima:** {last}")
+                if st.button("Vedi Dettagli", key=p['id']):
+                    st.query_params["plant_id"] = p['id']
+                    st.rerun()
+
+# Generatore QR (Nascosto in sidebar)
 st.sidebar.header("🖨️ Stampa QR Code")
 if st.sidebar.checkbox("Mostra codici"):
-    # LINK AGGIORNATO:
+    # INCOLLA QUI IL TUO LINK CORRETTO:
     url_base = "https://piante-ufficio-kchykjcgehambaqjlyfmvb.streamlit.app"
     for p in DATA:
         img = qrcode.make(f"{url_base}/?plant_id={p['id']}")
-        st.sidebar.image(p['img'], width=100)
         buf = BytesIO(); img.save(buf); st.sidebar.image(buf.getvalue(), caption=p['nome'])
-    
