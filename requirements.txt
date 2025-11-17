@@ -1,3 +1,6 @@
 streamlit
 pandas
 qrcode
+streamlit-lottie
+requests
+
